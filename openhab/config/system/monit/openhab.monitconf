@@ -1,0 +1,10 @@
+check process openhab with pidfile /var/run/openhab.pid
+	start program = "/etc/init.d/openhab start"
+	stop program  = "/etc/init.d/openhab stop"
+
+	if failed host 127.0.0.1 port 8080 protocol http
+		then restart
+
+	if failed port 8443 type tcpssl protocol http
+		then restart
+

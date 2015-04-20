@@ -1,0 +1,34 @@
+sitemap default label="Visonic - лаборатория"
+{
+	Frame label="Date" {  
+  		Text item=Date  
+ 	}
+    Frame label="Main room" {
+        Group item=Motions label="Motion sensors" icon="firstfloor"
+        Group item=Dimmers label="Dimmers" icon="firstfloor"
+        Group item=Switches label="Switches" icon="socket"
+        Group item=ESP1 label="ESP1" icon="firstfloor"
+        Group item=ESP2 label="ESP2" icon="firstfloor"
+        Group item=ESP3 label="ESP3" icon="firstfloor"
+    }
+    Frame label="Chart Z-WAVE" {
+        Switch item=chart_period label="Chart Period" mappings=[0="Hour",1="Day",2="Week"]
+        Chart item=Temp_Sensor_1 period=h refresh=600000 visibility=[chart_period==0,chart_period=="Uninitialized"]
+        Chart item=Temp_Sensor_1 period=D refresh=600000 visibility=[chart_period==1]
+        Chart item=Temp_Sensor_1 period=W refresh=600000 visibility=[chart_period==2]
+    }
+
+    Frame label="Chart ESP" {
+        Switch item=chart_period1 label="Chart Period ESP" mappings=[0="Hour",1="Day",2="Week"]
+        Chart item=esp1_temp period=h refresh=600000 visibility=[chart_period1==0,chart_period1=="Uninitialized"]
+        Chart item=esp1_temp period=D refresh=600000 visibility=[chart_period1==1]
+        Chart item=esp1_temp period=W refresh=600000 visibility=[chart_period1==2]
+
+        Switch item=chart_period2 label="Chart Period ESP" mappings=[0="Hour",1="Day",2="Week"]
+        Chart item=esp1_humid period=h refresh=600000 visibility=[chart_period2==0,chart_period2=="Uninitialized"]
+        Chart item=esp1_humid period=D refresh=600000 visibility=[chart_period2==1]
+        Chart item=esp1_humid period=W refresh=600000 visibility=[chart_period2==2]
+    }
+
+}
+

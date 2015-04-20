@@ -1,0 +1,7 @@
+check process openhab with pidfile /var/run/openhab.pid
+	start program = "/opt/openhab/start.sh"
+	stop program  = "/usr/bin/killall -9 java"
+
+	if failed port 8443 type tcpssl protocol http
+		then restart
+

@@ -1,0 +1,30 @@
+//Turning on led1 when motion present
+/*
+rule "Enable led1"
+when
+    Item Motion_Sensor_1 changed from CLOSED to OPEN 
+then
+    sendCommand(LED7, ON)
+end
+
+rule "Disable led1"
+when
+    Item Motion_Sensor_1 changed from OPEN to CLOSED 
+then
+    sendCommand(LED7, OFF)
+end
+
+rule "voice switch one on"
+when
+    Item VoiceCommand received command on
+then
+    Switch3500.sendCommand(ON)    
+end
+
+rule "voice switch one off"
+when
+    Item VoiceCommand received command off
+then
+    Switch3500.sendCommand(OFF)    
+end
+*/

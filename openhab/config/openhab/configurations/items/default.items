@@ -1,0 +1,115 @@
+Number chart_period "Chart Period [%.0f]"
+Number chart_period1 "Chart Period [%.0f]"
+Number chart_period2 "Chart Period [%.0f]"
+String VoiceCommand
+
+Group all
+Group ESP1
+Group ESP2
+Group ESP3
+Group Dimmers
+Group Switches
+Group Motions
+
+/*Z-wave devices******************************************************/
+    
+Dimmer Light_dimmer_1
+    "Light dimmer 1 [%d %%]"
+    <slider>
+    (Dimmers)
+    {zwave="8:command=switch_multilevel, restore_last_value=true"}
+
+Switch Switch3500
+    "Switch3500 1 on/off"
+    <socket>
+    (Switches)
+    {zwave="10:command=switch_binary"}
+
+Number Temp_Sensor_1
+        "Outside [%.1f °C]"
+        <temperature>
+        (Motions)
+        {zwave="7:1:command=SENSOR_MULTILEVEL,sensor_type=1,sensor_scale=0"}
+
+Number Humid_Sensor_1
+        "Relative humidity: [%.0f %%]"
+        <water>
+        (Motions)
+        {zwave="7:1:command=SENSOR_MULTILEVEL,sensor_type=5"}
+
+Number Luminance_Sensor_1
+        "Luminance: [%.0f Lux]"
+        <sun>
+        (Motions)
+        {zwave="7:1:command=SENSOR_MULTILEVEL,sensor_type=3"}
+
+Contact Motion_Sensor_1
+        "sensor [MAP(motion.map):%s]"
+        (Motions)
+        {zwave="7:1:command=sensor_binary,respond_to_basic=true"}
+
+Number Battery_Sensor_1
+        "Battery [%s %%]"
+        <battery>
+        (Motions)
+        {zwave="7:command=battery"}
+/******************************************************************************/
+
+Switch	esp1_light
+        "Light"
+        <light>
+        (ESP1)
+        {mqtt=">[mqtt_broker:/myhome/esp_18-FE-34-9D-60-1F/light:command:*:${command}]"}
+
+Number	esp1_temp
+        "Temperature [%s]"
+        <temperature>
+        (ESP1)
+        {mqtt="<[mqtt_broker:/myhome/esp_18-FE-34-9D-60-1F/temperature:state:REGEX((.*))]"}
+              
+Number	esp1_humid
+        "Himidity [%s]"
+        <water>
+        (ESP1)
+        {mqtt="<[mqtt_broker:/myhome/esp_18-FE-34-9D-60-1F/humidity:state:REGEX((.*))]"}
+
+Switch	esp2_light
+        "Light"
+        <light>
+        (ESP2)
+        {mqtt=">[mqtt_broker:/myhome/esp_18-FE-34-9D-60-F0/light:command:*:${command}]"}
+
+Number	esp2_temp
+        "Temperature [%s]"
+        <temperature>
+        (ESP2)
+        {mqtt="<[mqtt_broker:/myhome/esp_18-FE-34-9D-60-F0/temperature:state:REGEX((.*))]"}
+              
+Number	esp2_humid
+        "Himidity [%s]"
+        <water>
+        (ESP2)
+        {mqtt="<[mqtt_broker:/myhome/esp_18-FE-34-9D-60-F0/humidity:state:REGEX((.*))]"}
+
+Switch	esp3_light
+        "Light"
+        <light>
+        (ESP3)
+        {mqtt=">[mqtt_broker:/myhome/esp_18-FE-34-9B-63-D8/light:command:*:${command}]"}
+
+Number	esp3_temp
+        "Temperature [%s]"
+        <temperature>
+        (ESP3)
+        {mqtt="<[mqtt_broker:/myhome/esp_18-FE-34-9B-63-D8/temperature:state:REGEX((.*))]"}
+              
+Number	esp3_humid
+        "Himidity [%s]"
+        <water>
+        (ESP3)
+        {mqtt="<[mqtt_broker:/myhome/esp_18-FE-34-9B-63-D8/humidity:state:REGEX((.*))]"}
+
+DateTime  Date   
+    "Date and time [%1$td.%1$tm.%1$tY %1$tT]"
+    <calendar>
+    { ntp="Europe/Kiev:uk_UA" }
