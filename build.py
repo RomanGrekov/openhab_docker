@@ -6,8 +6,13 @@ import traceback
 import os
 import re
 import shutil
+import fcntl
+import sys
 
 parser = OptionParser();
+
+parser.add_option("-v", "--verbose", dest="verbose", action="store_true",
+                  help="Print bash stdout")
 
 parser.add_option("-u", "--update", dest="update", action="store_true",
                   help="This flag update: configs, scripts, addons")
@@ -29,17 +34,44 @@ parser.add_option("-r", "--run", dest="run", action="append", type="string",
 
 (options, args) = parser.parse_args()
 
+
 def perform_bash(action):
     print action
-    pipe = subprocess.Popen(action,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            shell=True)
-    (stdout, stderr) = pipe.communicate()
-    retcode = pipe.returncode
+    process = ProcessIterator(action)
+    stdout_store = ""
+    for stdout in process:
+        if stdout:
+            stdout_store += stdout
+            if options.verbose:
+                sys.stdout.write(stdout)
+    retcode = process.get_retcode()
     if retcode:
-        raise RuntimeError(stdout+stderr)
-    return retcode, stdout, stderr
+        raise RuntimeError(process.get_stderr())
+    return retcode, stdout_store, process.get_stderr()
+
+class ProcessIterator():
+    def __init__(self, action):
+        self.pipe = subprocess.Popen(action, stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE, shell=True)
+        fl=fcntl.fcntl (self.pipe.stdout, fcntl.F_GETFL) # get flags for file desriptor
+        fcntl.fcntl (self.pipe.stdout, fcntl.F_SETFL, fl|os.O_NONBLOCK) # set nonblocking on read
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        if self.pipe.poll() is None:
+            try:
+                return self.pipe.stdout.read()
+            except:
+                return ""
+        raise StopIteration
+
+    def get_retcode(self):
+        return self.pipe.returncode
+
+    def get_stderr(self):
+        return self.pipe.stderr.read()
 
 def exception_handler(description):
     def wrapper(f):
@@ -134,27 +166,28 @@ def build_mysql(full_imaage_name):
 
 @exception_handler("Run openhab")
 def run_openhab(full_imaage_name):
-    action = "sudo docker run -m 400m -p 443:8443 -p 8080:8080 -t -i %s" % full_imaage_name
+    action = "sudo docker run -d --name openhab --link mysql:mysql --link mosquitto:mosquitto -m 400m -p 443:8443 -p 8080:8080 %s" % full_imaage_name
     perform_bash(action)
 
 @exception_handler("Run mosquitto")
 def run_mosquitto(full_imaage_name):
-    action = "sudo docker run -m 100m -p 1883:1883 -t -i %s" % full_imaage_name
+    action = "sudo docker run --name mosquitto -m 100m -p 1883:1883 %s" % full_imaage_name
     perform_bash(action)
 
 @exception_handler("Run mysql")
 def run_mysql(full_imaage_name):
-    action = "sudo docker run -m 100m -p 1884:1884 -t -i %s" % full_imaage_name
+    action = "sudo docker run --name mysql -m 100m -p 3306:3306 %s" % full_imaage_name
     perform_bash(action)
 
 @exception_handler("Export image")
-def export(full_imaage_name):
-    action = "sudo docker save -o %s %s" % (full_imaage_name, full_imaage_name)
+def export(full_imaage_name, saved_image, path):
+    action = "sudo docker save -o %s %s" % (os.path.join(path, saved_image),
+                                            full_imaage_name)
     perform_bash(action)
 
 @exception_handler("Import image")
-def _import(full_imaage_name):
-    action = "sudo docker load -i %s" % (full_imaage_name)
+def _import(saved_image, path):
+    action = "sudo docker load -i %s" % os.path.join(path, saved_image)
     perform_bash(action)
 
 def main():
@@ -165,23 +198,29 @@ def main():
     openhab_addons = os.path.join(openhab_configs, "addons")
     openhab_distro = "openhab/openhab"
 
+    images_path = "images"
 
-
-    repo = "romang"
+    repo = "roman1grekov"
     openhab_image_name = "openhab"
     openhab_image_version = "v2.1"
-    full_openhab_image_name="%s/%s:%s" %(repo, openhab_image_name,
-                                         openhab_image_version)
+    full_openhab_image_name = "%s/%s:%s" %(repo, openhab_image_name,
+                                           openhab_image_version)
+    openhab_saved_image = "%s_%s_%s" % (repo, openhab_image_name,
+                                        openhab_image_version)
 
     mosquitto_image_name = "mosquitto"
     mosquitto_image_version = "v0.1"
     full_mosquitto_image_name="%s/%s:%s" %(repo, mosquitto_image_name,
                                          mosquitto_image_version)
+    mosquitto_saved_image = "%s_%s_%s" % (repo, mosquitto_image_name,
+                                          mosquitto_image_version)
 
     mysql_image_name = "mysql"
     mysql_image_version = "v0.1"
     full_mysql_image_name="%s/%s:%s" %(repo, mysql_image_name,
                                            mysql_image_version)
+    mysql_saved_image = "%s_%s_%s" % (repo, mysql_image_name,
+                                      mysql_image_version)
 
     openhab_distro_link = "https://github.com/openhab/openhab/releases/download/v1.6.2/distribution-1.6.2-runtime.zip"
     openhab_addons_link = "https://github.com/openhab/openhab/releases/download/v1.6.2/distribution-1.6.2-addons.zip "
@@ -218,19 +257,19 @@ def main():
 
     for option in options.export:
         if option == "openhab":
-            export(full_openhab_image_name)
+            export(full_openhab_image_name, openhab_saved_image, images_path)
         if option == "mosquitto":
-            export(full_mosquitto_image_name)
+            export(full_mosquitto_image_name, mosquitto_saved_image, images_path)
         if option == "mysql":
-            export(full_mysql_image_name)
+            export(full_mysql_image_name, mysql_saved_image, images_path)
 
     for option in options._import:
         if option == "openhab":
-            _import(full_openhab_image_name)
+            _import(openhab_saved_image, images_path)
         if option == "mosquitto":
-            _import(full_mosquitto_image_name)
+            _import(mosquitto_saved_image, images_path)
         if option == "mysql":
-            _import(full_mysql_image_name)
+            _import(mysql_saved_image, images_path)
 
 if __name__ == '__main__':
     main()

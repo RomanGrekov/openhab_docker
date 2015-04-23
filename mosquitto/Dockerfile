@@ -40,6 +40,8 @@ ADD ./mosquitto.conf /etc/mosquitto/
 #*********************************************************
 
 #Startup script
-CMD /etc/init.d/mosquitto start
+#CMD /etc/init.d/mosquitto start
 
-EXPOSE 1883 1888 1889
+EXPOSE 1883
+
+CMD ["/usr/local/sbin/mosquitto", "-c", "/etc/mosquitto/mosquitto.conf"]
