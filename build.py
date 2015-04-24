@@ -23,6 +23,9 @@ parser.add_option("-g", "--upgrade", dest="upgrade", action="append", type="stri
 parser.add_option("-b", "--build", dest="build", action="append", type="string",
                   default=[], help="openhab, mosquitto, mysql")
 
+parser.add_option("-t", "--tag", dest="tag", action="store", type="string",
+                  default=[], help="Tag for docker container. Default: latest")
+
 parser.add_option("-e", "--export", dest="export", action="append", type="string",
                   default=[], help="openhab, mosquitto, mysql")
 
@@ -171,12 +174,12 @@ def run_openhab(full_imaage_name):
 
 @exception_handler("Run mosquitto")
 def run_mosquitto(full_imaage_name):
-    action = "sudo docker run --name mosquitto -m 100m -p 1883:1883 %s" % full_imaage_name
+    action = "sudo docker run -d --name mosquitto -m 100m -p 1883:1883 %s" % full_imaage_name
     perform_bash(action)
 
 @exception_handler("Run mysql")
 def run_mysql(full_imaage_name):
-    action = "sudo docker run --name mysql -m 100m -p 3306:3306 %s" % full_imaage_name
+    action = "sudo docker run -d --name mysql -m 100m -p 3306:3306 %s" % full_imaage_name
     perform_bash(action)
 
 @exception_handler("Export image")
@@ -197,30 +200,26 @@ def main():
     openhab_configuration = os.path.join(openhab_configs, "configurations")
     openhab_addons = os.path.join(openhab_configs, "addons")
     openhab_distro = "openhab/openhab"
-
     images_path = "images"
+
+    tag = options.tag
+    if not tag:
+        tag = "latest"
 
     repo = "roman1grekov"
     openhab_image_name = "openhab"
-    openhab_image_version = "v2.1"
     full_openhab_image_name = "%s/%s:%s" %(repo, openhab_image_name,
-                                           openhab_image_version)
+                                           tag)
     openhab_saved_image = "%s_%s_%s" % (repo, openhab_image_name,
-                                        openhab_image_version)
+                                        tag)
 
     mosquitto_image_name = "mosquitto"
-    mosquitto_image_version = "v0.1"
-    full_mosquitto_image_name="%s/%s:%s" %(repo, mosquitto_image_name,
-                                         mosquitto_image_version)
-    mosquitto_saved_image = "%s_%s_%s" % (repo, mosquitto_image_name,
-                                          mosquitto_image_version)
+    full_mosquitto_image_name="%s/%s:%s" %(repo, mosquitto_image_name, tag)
+    mosquitto_saved_image = "%s_%s_%s" % (repo, mosquitto_image_name, tag)
 
     mysql_image_name = "mysql"
-    mysql_image_version = "v0.1"
-    full_mysql_image_name="%s/%s:%s" %(repo, mysql_image_name,
-                                           mysql_image_version)
-    mysql_saved_image = "%s_%s_%s" % (repo, mysql_image_name,
-                                      mysql_image_version)
+    full_mysql_image_name="%s/%s:%s" %(repo, mysql_image_name, tag)
+    mysql_saved_image = "%s_%s_%s" % (repo, mysql_image_name, tag)
 
     openhab_distro_link = "https://github.com/openhab/openhab/releases/download/v1.6.2/distribution-1.6.2-runtime.zip"
     openhab_addons_link = "https://github.com/openhab/openhab/releases/download/v1.6.2/distribution-1.6.2-addons.zip "
